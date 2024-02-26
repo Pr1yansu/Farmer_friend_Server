@@ -23,7 +23,7 @@ public class History {
     @Column(nullable = false)
     private LocalDateTime date;
 
-    @Column(nullable = false)
+    @Column(name = "description",nullable = false)
     private String desc;
 
 

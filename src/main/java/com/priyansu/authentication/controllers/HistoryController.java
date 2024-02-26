@@ -27,6 +27,7 @@ public class HistoryController {
 
     @PostMapping("/create")
     public ResponseEntity create(@RequestBody History history, HttpServletRequest request){
+        System.out.println(history);
         String token = jwtTokenProvider.extractTokenFromHeader(request);
         if (token == null) {
             return new ResponseEntity<>("You are not authorized", HttpStatus.UNAUTHORIZED);
