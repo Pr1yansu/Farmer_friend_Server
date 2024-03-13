@@ -1,6 +1,7 @@
 package com.priyansu.authentication.entity;
 
 import jakarta.persistence.*;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -19,9 +20,11 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String name;
 
+    @Setter
     @Column(nullable = false)
     private String password;
 
+    @Setter
     @Column
     private String image;
 
@@ -87,17 +90,10 @@ public class User implements UserDetails {
         return true;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public String getImage() {
         return image;
     }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
     public Role getRole() {
         return role;
     }
@@ -105,5 +101,6 @@ public class User implements UserDetails {
     public void setRole(Role role) {
         this.role = Role.USER;
     }
+
 }
 
