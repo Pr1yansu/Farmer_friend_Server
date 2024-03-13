@@ -30,6 +30,12 @@ public class AuthService {
     public ReqRes signUp(ReqRes registrationRequest){
         ReqRes resp = new ReqRes();
         try{
+            User existingUser = userRepository.findByEmail(registrationRequest.getEmail());
+            if (existingUser != null){
+                resp.setError("User Already Exists!");
+                resp.setStatusCode(400);
+                return resp;
+            }
             User user = new User();
             user.setName(registrationRequest.getName());
             user.setEmail(registrationRequest.getEmail());
@@ -51,7 +57,11 @@ public class AuthService {
         try{
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getEmail(),loginRequest.getPassword()));
             var user = userRepository.findByEmail(loginRequest.getEmail());
-            System.out.println("User is: "+user);
+            if (user == null){
+                response.setStatusCode(400);
+                response.setError("User Not Found!");
+                return response;
+            }
             var jwt = jwtUtils.genrateToken((user));
             var refreashToken = jwtUtils.genrateRefreashToken(new HashMap<>(),user);
             response.setStatusCode(200);
@@ -63,7 +73,7 @@ public class AuthService {
         catch(Exception e){
             e.fillInStackTrace();
             response.setStatusCode(500);
-            response.setMessage(e.getMessage());
+            response.setError(e.getMessage());
         }
         return response;
     }
