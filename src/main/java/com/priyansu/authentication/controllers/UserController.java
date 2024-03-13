@@ -1,27 +1,25 @@
 package com.priyansu.authentication.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.priyansu.authentication.config.CloudinaryConfig;
-import com.priyansu.authentication.config.JwtTokenProvider;
+import com.priyansu.authentication.dto.ReqRes;
 import com.priyansu.authentication.entity.User;
+import com.priyansu.authentication.service.AuthService;
+import com.priyansu.authentication.service.JwtUtils;
 import com.priyansu.authentication.service.UserServices;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/auth/users")
 public class UserController {
 
     @Autowired
@@ -31,26 +29,18 @@ public class UserController {
     private CloudinaryConfig cloudinaryConfig;
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    private JwtUtils jwtTokenProvider;
 
+    @Autowired
+    AuthService authService;
     @GetMapping("/hello")
     public ResponseEntity<String> hello() {
         return new ResponseEntity<>("Hello from GET route!", HttpStatus.OK);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User credentials, HttpServletRequest request) {
-        String token = request.getHeader("Authorization");
-        if (token != null) {
-            return new ResponseEntity<>("You are already logged in", HttpStatus.OK);
-        }
-        User user = userServices.authenticateUser(credentials.getEmail(), credentials.getPassword());
-        if (user != null) {
-            String newToken = jwtTokenProvider.generateToken(user);
-            return new ResponseEntity<>(newToken, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Invalid credentials", HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<ReqRes> login(@RequestBody ReqRes loginReq) {
+        return ResponseEntity.ok(authService.login(loginReq));
     }
 
     @GetMapping("/logout")
@@ -64,13 +54,14 @@ public class UserController {
     }
 
     @PostMapping("/upload-image")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file, HttpServletRequest request, Principal principal) {
         try {
             String token = jwtTokenProvider.extractTokenFromHeader(request);
-            if (!jwtTokenProvider.isTokenValid(token)) {
+            if (!jwtTokenProvider.isTokenValid(token,(UserDetails) principal)) {
                 return new ResponseEntity<>("Invalid or expired token", HttpStatus.UNAUTHORIZED);
             }
-            User user = jwtTokenProvider.extractUserFromToken(token);
+            String username = jwtTokenProvider.extractUsername(token);
+            User user = userServices.loadUserByUsername(username);
             if (user == null) {
                 return new ResponseEntity<>("You are not authorized to upload image", HttpStatus.UNAUTHORIZED);
             }
@@ -93,14 +84,8 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity registerUser(@RequestBody User user) {
-        try {
-            User createdUser = userServices.createUser(user);
-            return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
-        } catch (Exception e) {
-            e.fillInStackTrace();
-            return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<ReqRes> registerUser(@RequestBody ReqRes registerReq) {
+       return ResponseEntity.ok(authService.signUp(registerReq));
     }
 
     @GetMapping("/profile")
@@ -111,7 +96,8 @@ public class UserController {
                     "You are not authorized to view this profile"
                     , HttpStatus.UNAUTHORIZED);
         }
-        User user = jwtTokenProvider.extractUserFromToken(token);
+        String username = jwtTokenProvider.extractUsername(token);
+        User user = userServices.loadUserByUsername(username);
         if (user == null) {
             return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
         }
@@ -129,7 +115,8 @@ public class UserController {
         if (token == null) {
             return new ResponseEntity<>("You are not authorized to update this user", HttpStatus.UNAUTHORIZED);
         }
-        User authenticatedUser = jwtTokenProvider.extractUserFromToken(token);
+        String username = jwtTokenProvider.extractUsername(token);
+        User authenticatedUser = userServices.loadUserByUsername(username);
         if (authenticatedUser == null) {
             return new ResponseEntity<>("You are not authorized to update this user", HttpStatus.UNAUTHORIZED);
         }

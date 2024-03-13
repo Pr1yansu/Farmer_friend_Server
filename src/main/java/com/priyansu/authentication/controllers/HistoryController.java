@@ -1,15 +1,17 @@
 package com.priyansu.authentication.controllers;
 
-import com.priyansu.authentication.config.JwtTokenProvider;
 import com.priyansu.authentication.entity.History;
 import com.priyansu.authentication.entity.User;
 import com.priyansu.authentication.service.HistoryServices;
+import com.priyansu.authentication.service.JwtUtils;
+import com.priyansu.authentication.service.UserServices;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -20,7 +22,10 @@ public class HistoryController {
     private HistoryServices historyServices;
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    private JwtUtils jwtTokenProvider;
+
+    @Autowired
+    UserServices userServices;
 
     @GetMapping("/test")
     public ResponseEntity<String> testingHistory() {
@@ -28,12 +33,13 @@ public class HistoryController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity create(@RequestBody History history, HttpServletRequest request) {
+    public ResponseEntity create(@RequestBody History history, HttpServletRequest request, Principal principal) {
         String token = jwtTokenProvider.extractTokenFromHeader(request);
         if (token == null) {
             return new ResponseEntity<>("You are not authorized", HttpStatus.UNAUTHORIZED);
         }
-        User authenticatedUser = jwtTokenProvider.extractUserFromToken(token);
+        String username = jwtTokenProvider.extractUsername(token);
+        User authenticatedUser = userServices.loadUserByUsername(username);
         if (authenticatedUser == null) {
             return new ResponseEntity<>("You are not authorized user", HttpStatus.UNAUTHORIZED);
         }
@@ -52,7 +58,8 @@ public class HistoryController {
         if (token == null) {
             return new ResponseEntity<>("You are not authorized", HttpStatus.UNAUTHORIZED);
         }
-        User authenticatedUser = jwtTokenProvider.extractUserFromToken(token);
+        String username = jwtTokenProvider.extractUsername(token);
+        User authenticatedUser = userServices.loadUserByUsername(username);
         if (authenticatedUser == null) {
             return new ResponseEntity<>("You are not authorized user", HttpStatus.UNAUTHORIZED);
         }
