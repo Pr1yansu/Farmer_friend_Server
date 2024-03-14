@@ -54,21 +54,27 @@ public class UserController {
     }
 
     @PostMapping("/upload-image")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file, HttpServletRequest request, Principal principal) {
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
         try {
             String token = jwtTokenProvider.extractTokenFromHeader(request);
-            if (!jwtTokenProvider.isTokenValid(token,(UserDetails) principal)) {
-                return new ResponseEntity<>("Invalid or expired token", HttpStatus.UNAUTHORIZED);
-            }
             String username = jwtTokenProvider.extractUsername(token);
             User user = userServices.loadUserByUsername(username);
+
             if (user == null) {
-                return new ResponseEntity<>("You are not authorized to upload image", HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity<>("You are not authorized to upload an image", HttpStatus.UNAUTHORIZED);
             }
+
             if (file != null && !file.isEmpty()) {
                 Map uploadResult = cloudinaryConfig.uploadAvatar(file.getBytes());
                 String imageUrl = uploadResult.get("url").toString();
+
+                String oldImageUrl = user.getImage();
+                if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                    cloudinaryConfig.deleteImage(oldImageUrl);
+                }
+
                 boolean isUpdated = userServices.updateUserImage(user.getEmail(), imageUrl);
+
                 if (isUpdated) {
                     return new ResponseEntity<>("Image uploaded successfully", HttpStatus.OK);
                 } else {
@@ -82,6 +88,7 @@ public class UserController {
             return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @PostMapping("/register")
     public ResponseEntity<ReqRes> registerUser(@RequestBody ReqRes registerReq) {
