@@ -1,6 +1,7 @@
 package com.priyansu.authentication.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,8 +22,14 @@ public class User implements UserDetails {
     private String name;
 
     @Setter
+    @Getter
     @Column(nullable = false)
     private String password;
+
+    @Column
+    @Setter
+    @Getter
+    private String phone_number;
 
     @Setter
     @Column
