@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -117,29 +118,55 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<String> updateUser(@RequestBody User user, HttpServletRequest request) {
+    public ReqRes updateUser(@RequestBody ReqRes user, HttpServletRequest request) {
+        ReqRes response = new ReqRes();
         String token = jwtTokenProvider.extractTokenFromHeader(request);
         if (token == null) {
-            return new ResponseEntity<>("You are not authorized to update this user", HttpStatus.UNAUTHORIZED);
-        }
-        String username = jwtTokenProvider.extractUsername(token);
-        User authenticatedUser = userServices.loadUserByUsername(username);
-        if (authenticatedUser == null) {
-            return new ResponseEntity<>("You are not authorized to update this user", HttpStatus.UNAUTHORIZED);
-        }
-        if (!authenticatedUser.getEmail().equals(user.getEmail())) {
-            return new ResponseEntity<>("You are not authorized to update this user", HttpStatus.UNAUTHORIZED);
+            response.setStatusCode(HttpStatus.UNAUTHORIZED.value());
+            response.setError("You are not authorized to update this user");
+            return response;
         }
         try {
-            User updatedUser = userServices.updateUser(user);
+
+            String username = jwtTokenProvider.extractUsername(token);
+            User authenticatedUser = userServices.authenticateUser(username,user.getPassword());
+            if(authenticatedUser==null){
+                response.setStatusCode(HttpStatus.UNAUTHORIZED.value());
+                response.setError("Wrong password!");
+                return response;
+            }
+            authenticatedUser.setEmail(user.getEmail());
+            authenticatedUser.setName(user.getName());
+            try{
+                authenticatedUser.setPassword(new BCryptPasswordEncoder().encode(user.getNew_password()));
+            }catch(Exception e){
+                e.fillInStackTrace();
+            }
+            authenticatedUser.setPhone_number(user.getPhone_number());
+            if(!username.equals(authenticatedUser.getEmail())){
+                User existence = userServices.loadUserByUsername(authenticatedUser.getEmail());
+                if(existence!=null){
+                    response.setStatusCode(HttpStatus.CONFLICT.value());
+                    response.setError("User already exist! Please choose another email!");
+                    return response;
+                }
+            }
+            User updatedUser = userServices.updateUser(authenticatedUser);
             if (updatedUser != null) {
-                return new ResponseEntity<>("User updated successfully", HttpStatus.OK);
+                response.setStatusCode(HttpStatus.OK.value());
+                response.setError("User updated successfully");
+                response.setToken(jwtTokenProvider.genrateToken(updatedUser));
+                return response;
             } else {
-                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+                response.setStatusCode(HttpStatus.NOT_FOUND.value());
+                response.setError("User not found");
+                return response;
             }
         } catch (Exception e) {
             e.fillInStackTrace();
-            return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.setError("Something went wrong! Please try again letter...");
+            return response;
         }
     }
 }
