@@ -59,11 +59,15 @@ public class SecurityConfig {
                 AbstractHttpConfigurer::disable
         ).cors(
                 cors->cors.configurationSource(corsConfigurationSource())
-        ).authorizeHttpRequests(request -> request.requestMatchers("/auth/**","/public/**")
-                .permitAll().requestMatchers("/admin/**").hasAnyAuthority("ADMIN")
-                .requestMatchers("/user/**").hasAnyAuthority("USER","ADMIN").anyRequest().authenticated())
+        ).authorizeHttpRequests(request -> request
+                                .requestMatchers("/auth/users/update").authenticated()
+                                .requestMatchers("/auth/users/logout").authenticated()
+                                .requestMatchers("/auth/users/upload-image").authenticated()
+                                .requestMatchers("/api/history/**").authenticated()
+                                .anyRequest().permitAll()
+                        )
                 .sessionManagement(
-                        manageer -> manageer.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 ).authenticationProvider(authenticationProvider()).addFilterBefore(
                         jwtAuthFilter, UsernamePasswordAuthenticationFilter.class
                 );

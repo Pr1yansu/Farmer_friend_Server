@@ -28,13 +28,13 @@ public class JwtUtils {
         byte[] key_bytes = Base64.getDecoder().decode(secret_string.getBytes(StandardCharsets.UTF_8));
         this.SECRET_KEY = new SecretKeySpec(key_bytes,"HmacSHA256");
     }
-    public String genrateToken(UserDetails userDetails){
+    public String generateToken(UserDetails userDetails){
         return Jwts.builder().subject(userDetails.getUsername()).issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis()+EXPIRATION_TIME))
                 .signWith(SECRET_KEY).compact();
     }
 
-    public String genrateRefreashToken(HashMap<String, Object> claims,UserDetails userDetails){
+    public String genrateRefreshToken(HashMap<String, Object> claims,UserDetails userDetails){
         return Jwts.builder().claims(claims).subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis()+EXPIRATION_TIME))

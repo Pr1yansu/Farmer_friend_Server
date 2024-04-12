@@ -4,6 +4,7 @@ import com.priyansu.authentication.config.CloudinaryConfig;
 import com.priyansu.authentication.dto.ReqRes;
 import com.priyansu.authentication.entity.User;
 import com.priyansu.authentication.service.AuthService;
+import com.priyansu.authentication.service.EmailService;
 import com.priyansu.authentication.service.JwtUtils;
 import com.priyansu.authentication.service.UserServices;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,10 +35,6 @@ public class UserController {
 
     @Autowired
     AuthService authService;
-    @GetMapping("/hello")
-    public ResponseEntity<String> hello() {
-        return new ResponseEntity<>("Hello from GET route!", HttpStatus.OK);
-    }
 
     @PostMapping("/login")
     public ResponseEntity<ReqRes> login(@RequestBody ReqRes loginReq) {
@@ -97,7 +94,7 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity getProfile(HttpServletRequest request) {
+    public ResponseEntity<?> getProfile(HttpServletRequest request) {
         String token = jwtTokenProvider.extractTokenFromHeader(request);
         if (token == null) {
             return new ResponseEntity<>(
@@ -115,6 +112,16 @@ public class UserController {
         } else {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ReqRes> forgotPassword(@RequestBody ReqRes reqRes) {
+        return ResponseEntity.ok(authService.forgotPassword(reqRes));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ReqRes> resetPassword(@RequestParam String token, @RequestBody ReqRes reqRes) {
+        return ResponseEntity.ok(authService.resetPassword(token, reqRes));
     }
 
     @PutMapping("/update")
@@ -155,13 +162,12 @@ public class UserController {
             if (updatedUser != null) {
                 response.setStatusCode(HttpStatus.OK.value());
                 response.setError("User updated successfully");
-                response.setToken(jwtTokenProvider.genrateToken(updatedUser));
-                return response;
+                response.setToken(jwtTokenProvider.generateToken(updatedUser));
             } else {
                 response.setStatusCode(HttpStatus.NOT_FOUND.value());
                 response.setError("User not found");
-                return response;
             }
+            return response;
         } catch (Exception e) {
             e.fillInStackTrace();
             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
