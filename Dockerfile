@@ -7,16 +7,13 @@ WORKDIR /app
 # Copy the pom.xml file to the working directory
 COPY pom.xml .
 
-# Download dependencies
-RUN mvn dependency:go-offline -B
-
 # Copy the entire source code to the working directory
 COPY src ./src
 
 # Build the application using Maven
-RUN mvn clean package -B
+RUN mvn clean package
 
-# Use the official OpenJDK 17 as the base image for running the application
+# Use AdoptOpenJDK 17 as the base image for running the application
 FROM openjdk:17-jdk-slim AS runtime
 
 # Set the working directory inside the container
