@@ -23,7 +23,7 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Expose the port that the Spring Boot application will run on
-EXPOSE 10000
+EXPOSE 8091
 
 # Define the command to run the application when the container starts
 ENTRYPOINT ["java", "-jar", "app.jar"]
