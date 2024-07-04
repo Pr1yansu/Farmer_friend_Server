@@ -14,7 +14,7 @@ COPY src ./src
 RUN mvn clean package
 
 # Use AdoptOpenJDK 17 as the base image for running the application
-FROM AdoptOpenJDK:17-jdk-slim AS runtime
+FROM adoptopenjdk:17-jdk-slim AS runtime
 
 # Set the working directory inside the container
 WORKDIR /app
