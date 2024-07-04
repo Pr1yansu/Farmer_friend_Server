@@ -22,7 +22,7 @@ WORKDIR /app
 # Copy the compiled application JAR file from the build stage to the runtime image
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose the port that the Spring Boot application will run on
+# Expose the port that the Spring Boot application will run on (adjust if needed)
 EXPOSE 8081
 
 # Define the command to run the application when the container starts
