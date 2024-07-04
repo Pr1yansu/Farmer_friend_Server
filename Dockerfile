@@ -13,8 +13,8 @@ COPY src ./src
 # Build the application using Maven
 RUN mvn clean package -DskipTests
 
-# Use AdoptOpenJDK 17 as the base image for running the application
-FROM adoptopenjdk:17-jdk-hotspot AS runtime
+# Use the official OpenJDK 17 image as the base image for running the application
+FROM openjdk:17-jdk-slim AS runtime
 
 # Set the working directory inside the container
 WORKDIR /app
