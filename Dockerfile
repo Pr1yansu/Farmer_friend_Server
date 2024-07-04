@@ -13,8 +13,8 @@ COPY src ./src
 # Build the application using Maven
 RUN mvn clean package
 
-# Use Eclipse Temurin 17 as the base image for running the application
-FROM eclipse-temurin:17-jdk-slim AS runtime
+# Use the official OpenJDK 17 as the base image for running the application
+FROM openjdk:17-jdk-slim AS runtime
 
 # Set the working directory inside the container
 WORKDIR /app
