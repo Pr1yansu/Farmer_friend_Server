@@ -11,10 +11,10 @@ COPY pom.xml .
 COPY src ./src
 
 # Build the application using Maven
-RUN mvn clean package
+RUN mvn clean package -DskipTests
 
 # Use AdoptOpenJDK 17 as the base image for running the application
-FROM openjdk:17-jdk-slim AS runtime
+FROM adoptopenjdk:17-jdk-hotspot AS runtime
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -22,8 +22,8 @@ WORKDIR /app
 # Copy the compiled application JAR file from the build stage to the runtime image
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose the port that the Spring Boot application will run on (adjust if needed)
-EXPOSE 8081
+# Expose the port that the Spring Boot application will run on
+EXPOSE 8080
 
 # Define the command to run the application when the container starts
 ENTRYPOINT ["java", "-jar", "app.jar"]
